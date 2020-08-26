@@ -1,0 +1,42 @@
+s(n)
+	s₁(n)
+		Σ[k = 0 → n](r^k)
+		1 + Σ[k = 1 → n](r^k)
+		1 + Σ[k = 0 → (n - 1)](r^(k + 1))
+		1 + r ⋅ Σ[k = 0 → (n - 1)](r^k)
+		1 + r ⋅ s₁(n - 1)
+
+	s₁(n)
+		Σ[k = 0 → n](r^k)
+		Σ[k = 0 → n - 1](r^k) + r^n
+		s₁(n - 1) + r^n
+
+	s₂(n)
+		(r^(n + 1) - 1)/(r - 1)
+		(r^(n + 1) - 1)/(r - 1) - s₂(n - 1) + s₂(n - 1)
+		(r^(n + 1) - 1)/(r - 1) - (r^n - 1)/(r - 1) + s₂(n - 1)
+		(r^(n + 1) - 1 - r^n + 1)/(r - 1) + s₂(n - 1)
+		(r^(n + 1) - r^n)/(r - 1) + s₂(n - 1)
+		(r ⋅ r^n - r^n)/(r - 1) + s₂(n - 1)
+		((r - 1) ⋅ r^n)/(r - 1) + s₂(n - 1)
+		r^n + s₂(n - 1)
+	
+	s₁(n) = s₂(n)
+
+	Σ[k = 0 → n](r^k) = (r^(n + 1) - 1)/(r - 1)
+
+Place = 1 + 3 × Corner + 2 × Edge
+Corner = 4 + 2 × Corner + Edge
+Edge = 3 × Corner + Edge
+
+Place = Union { root: 1, corner: 3 × Corner, edge: 2 × Edge }
+Corner = Union { root: 4, corner: 2 × Corner, edge: Edge }
+Edge = Union { corner: 3 × Corner, edge: Edge }
+
+Root = Place × Corner⁴
+Corner = Place × Edge × Place × Corner × Edge × Place × Corner × Edge
+Edge = Place × Edge × Place × Corner × Edge
+
+Root = Corner⁴
+Corner = Edge × Corner × Edge × Corner × Edge
+Edge = Edge × Corner × Edge
