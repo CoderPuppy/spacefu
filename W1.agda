@@ -127,6 +127,9 @@ backpath (_∷p_ m p) = backpath-cons m (backpath p)
 fwd-path : {cp₁ cp₂ : ConnectionPoint} → BackPath cp₁ cp₂ → Path cp₁ cp₂
 fwd-path [bp] = [p]
 fwd-path (bp bp∷ m) = path-snoc (fwd-path bp) m
+
+-- rotational offset from parent to child
+-- basically what direction is up in the child facing in the parent
 origin-place : {cp₁ cp₂ : ConnectionPoint} → Move cp₁ cp₂ → Rotation × Move cp₁ CPPlace
 origin-place MRootPlace = RUp , MRootPlace
 origin-place (MRootCorner d) = d , MRootPlace
@@ -182,14 +185,14 @@ move-help2 (bp bp∷ MEdgeEdge EEDRight) =
 
 move1 : BackPath CPRoot CPPlace → Rotation → Rotation × BackPath CPRoot CPPlace
 move1 ([bp] bp∷ MRootPlace) d =
-  d , [bp] bp∷ MRootCorner d bp∷ MCornerPlace CP1
+  d r¯¹ , [bp] bp∷ MRootCorner d bp∷ MCornerPlace CP1
 
 move1 (bp bp∷ MCornerPlace CP1) RUp =
   RUp , bp bp∷ MCornerEdge CEDUp bp∷ MEdgePlace EP1
 move1 (bp bp∷ MCornerPlace CP1) RRight =
   RUp , bp bp∷ MCornerPlace CP2
 move1 (bp bp∷ m bp∷ MCornerPlace CP1) RDown =
-  let r , m' = origin-place m in r r¯¹ , bp bp∷ m'
+  let r , m' = origin-place m in r , bp bp∷ m'
 move1 ([bp] bp∷ MRootCorner d bp∷ MCornerPlace CP1) RLeft =
   RDown , [bp] bp∷ MRootCorner (RLeft •r d) bp∷ MCornerPlace CP3
 move1 (bp bp∷ MCornerCorner CCDUp bp∷ MCornerPlace CP1) RLeft =
@@ -202,7 +205,7 @@ move1 (bp bp∷ MEdgeCorner bp∷ MCornerPlace CP1) RLeft =
 move1 (bp bp∷ MCornerPlace CP2) RUp =
   RUp , bp bp∷ MCornerCorner CCDUp bp∷ MCornerPlace CP1
 move1 (bp bp∷ MCornerPlace CP2) RRight =
-  RRight , bp bp∷ MCornerEdge CEDRight bp∷ MEdgePlace EP1
+  RLeft , bp bp∷ MCornerEdge CEDRight bp∷ MEdgePlace EP1
 move1 (bp bp∷ MCornerPlace CP2) RDown =
   RUp , bp bp∷ MCornerPlace CP3
 move1 (bp bp∷ MCornerPlace CP2) RLeft =
@@ -211,7 +214,7 @@ move1 (bp bp∷ MCornerPlace CP2) RLeft =
 move1 (bp bp∷ MCornerPlace CP3) RUp =
   RUp , bp bp∷ MCornerPlace CP2
 move1 (bp bp∷ MCornerPlace CP3) RRight =
-  RRight , bp bp∷ MCornerCorner CCDRight bp∷ MCornerPlace CP1
+  RLeft , bp bp∷ MCornerCorner CCDRight bp∷ MCornerPlace CP1
 move1 (bp bp∷ MCornerPlace CP3) RDown =
   RDown , bp bp∷ MCornerEdge CEDDown bp∷ MEdgePlace EP1
 move1 ([bp] bp∷ MRootCorner d bp∷ MCornerPlace CP3) RLeft =
@@ -228,9 +231,10 @@ move1 (bp bp∷ MEdgePlace EP1) RUp =
 move1 (bp bp∷ MEdgePlace EP1) RRight =
   RUp , bp bp∷ MEdgePlace EP2
 move1 (bp bp∷ m bp∷ MEdgePlace EP1) RDown =
-  let r , m' = origin-place m in r r¯¹ , bp bp∷ m'
+  let r , m' = origin-place m in r , bp bp∷ m'
 move1 ([bp] bp∷ MRootCorner d bp∷ MCornerEdge CEDUp bp∷ MEdgePlace EP1) RLeft =
-  RLeft , [bp] bp∷ MRootCorner (RLeft •r d) bp∷ MCornerEdge CEDDown bp∷ MEdgePlace EP2
+  RRight , [bp] bp∷ MRootCorner (RLeft •r d) bp∷ MCornerEdge CEDDown bp∷ MEdgePlace EP2
+-- TODO place
 move1 (bp bp∷ MCornerCorner CCDUp bp∷ MCornerEdge CEDUp bp∷ MEdgePlace EP1) RLeft =
   RLeft , bp bp∷ MCornerEdge CEDUp bp∷ MEdgeEdge EEDRight bp∷ MEdgePlace EP2
 move1 (bp bp∷ MCornerCorner CCDRight bp∷ MCornerEdge CEDUp bp∷ MEdgePlace EP1) RLeft =
@@ -275,32 +279,32 @@ move+ : BackPath CPRoot CPPlace → Rotation → List Rotation → Rotation × B
 move+ bp d [l] = d , bp
 move+ bp d (s ∷l ss) = let d' , bp' = move1 bp (d r¯¹ •r s) in move+ bp' (d •r d') ss
 
-w3 : {cp₁ cp₂ : ConnectionPoint} → Move cp₁ cp₂ → Rotation × List Rotation
-w3 MRootPlace = RUp , [l]
-w3 (MRootCorner d) = d , d ∷l [l]
-w3 (MCornerPlace CP1) = RUp , [l]
-w3 (MCornerPlace CP2) = RUp , RRight ∷l [l]
-w3 (MCornerPlace CP3) = RUp , RRight ∷l RDown ∷l [l]
-w3 (MCornerCorner CCDUp) = RUp , RRight ∷l RUp ∷l [l]
-w3 (MCornerCorner CCDRight) = RRight , RRight ∷l RDown ∷l RRight ∷l [l]
-w3 (MCornerEdge CEDUp) = RUp , RUp ∷l [l]
-w3 (MCornerEdge CEDRight) = RRight , RRight ∷l RRight ∷l [l]
-w3 (MCornerEdge CEDDown) = RDown , RRight ∷l RDown ∷l RDown ∷l [l]
-w3 (MEdgePlace EP1) = RUp , [l]
-w3 (MEdgePlace EP2) = RUp , RRight ∷l [l]
-w3 MEdgeCorner = RUp , RRight ∷l RUp ∷l [l]
-w3 (MEdgeEdge EEDUp) = RUp , RUp ∷l [l]
-w3 (MEdgeEdge EEDRight) = RRight , RRight ∷l RRight ∷l [l]
+move-steps : {cp₁ cp₂ : ConnectionPoint} → Move cp₁ cp₂ → Rotation × List Rotation
+move-steps MRootPlace = RUp , [l]
+move-steps (MRootCorner d) = d , d ∷l [l]
+move-steps (MCornerPlace CP1) = RUp , [l]
+move-steps (MCornerPlace CP2) = RUp , RRight ∷l [l]
+move-steps (MCornerPlace CP3) = RUp , RRight ∷l RDown ∷l [l]
+move-steps (MCornerCorner CCDUp) = RUp , RRight ∷l RUp ∷l [l]
+move-steps (MCornerCorner CCDRight) = RRight , RRight ∷l RDown ∷l RRight ∷l [l]
+move-steps (MCornerEdge CEDUp) = RUp , RUp ∷l [l]
+move-steps (MCornerEdge CEDRight) = RRight , RRight ∷l RRight ∷l [l]
+move-steps (MCornerEdge CEDDown) = RDown , RRight ∷l RDown ∷l RDown ∷l [l]
+move-steps (MEdgePlace EP1) = RUp , [l]
+move-steps (MEdgePlace EP2) = RUp , RRight ∷l [l]
+move-steps MEdgeCorner = RUp , RRight ∷l RUp ∷l [l]
+move-steps (MEdgeEdge EEDUp) = RUp , RUp ∷l [l]
+move-steps (MEdgeEdge EEDRight) = RRight , RRight ∷l RRight ∷l [l]
 
-w4 : {cp : ConnectionPoint} → BackPath CPRoot CPPlace → Rotation → Path cp CPPlace → Rotation × Path CPRoot CPPlace
-w4 bp d [p] = d , fwd-path bp
-w4 bp d (_∷p_ m p) =
-  let d' , ss = w3 m in
+move-path : {cp : ConnectionPoint} → BackPath CPRoot CPPlace → Rotation → Path cp CPPlace → Rotation × Path CPRoot CPPlace
+move-path bp d [p] = d , fwd-path bp
+move-path bp d (_∷p_ m p) =
+  let d' , ss = move-steps m in
   let d'' , bp' = move+ bp d ss in
-  w4 bp' {!   !} p
+  move-path bp' {!   !} p
 
--- _•p_ : Place → Place → Place
--- (ar , ap) •p (br , bp) = move1 (backpath ap) (ar •r br •r path-rotation ap) bp
+_•p_ : Place → Place → Place
+(ar , ap) •p (br , bp) = let d , p = move-path (backpath ap) ? bp in ?
 
 data Inspect {τ : Set} : τ → Set where
 
